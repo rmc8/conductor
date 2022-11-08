@@ -11,7 +11,6 @@ import discord
 
 from . import config, write_config, voice
 
-import discord
 
 print(config)
 print(write_config)

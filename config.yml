@@ -1,0 +1,25 @@
+token:
+server:
+  server_id:
+prsk:
+  live:
+    normal:
+      category_id:
+      room_ch_id:
+      vc_id:
+      vc_fmt: 周回【{room_num}】
+    cheerful:
+      category_id:
+      room_ch_id:
+      vc_id:
+      vc_fmt: 連勝【{room_num}】
+voice:
+  settings:
+    rate: 150
+  mute:
+    - 235088799074484224 # Rythm
+    - 252128902418268161 # Rythm2
+    - 533698325203910668 # shovel blue
+    - 600611680711606284 # shovel red
+    - 600611976024162304 # shovel green
+    - 518899666637553667 # しゃべ太郎

@@ -4,8 +4,7 @@ import yaml
 
 
 def mkdir(dir_path: str) -> None:
-    if not os.path.exists(dir_path):
-        os.mkdir(dir_path)
+    os.makedirs(dir_path, exist_ok=True)
 
 
 class YamlConfig:

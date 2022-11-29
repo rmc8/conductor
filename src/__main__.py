@@ -1,13 +1,21 @@
+import shutil
+import asyncio
 import warnings
 
-from local_module import conductor
+from local_module import conductor, util
 
 warnings.simplefilter("ignore")
 
 
-def main():
-    conductor.run()
+async def main():
+    try:
+        util.mkdir("./output/")
+        util.mkdir("./dict/")
+        util.mkdir("./log/")
+        await conductor.run()
+    finally:
+        shutil.rmtree("./output/")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

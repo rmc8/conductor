@@ -6,7 +6,8 @@ import pyttsx3
 
 from . import config
 
-print(config, "voice")
+
+settings: dict = config["voice"]["settings"]
 
 
 def rm_custom_emoji(text):
@@ -55,7 +56,7 @@ def rm_command(text):
     :param text: オリジナルのテキスト
     :return: コマンドを省略したテキスト
     """
-    return re.sub(r"^(!|\?|$|\.|>).*", text, flags=re.DOTALL)  # 置換処理
+    return re.sub(r"^(!|\?|$|\.|>).*", "", text, flags=re.DOTALL)  # 置換処理
 
 
 def rm_symbol(text):
@@ -95,14 +96,14 @@ def user_custom(text):
 
 def gen_mp3(text, path):
     engine = pyttsx3.init()
-    # rate = engine.getProperty('rate')
-    engine.setProperty("rate", 150)
+    # rate = engine.getProperty("rate")
+    engine.setProperty("rate", settings["rate"])
     engine.save_to_file(text, path)
     engine.runAndWait()
     print(f"save: {path}")
 
 
-def create_mp3(input_text, output_path) -> bool:
+def create_mp3(name, input_text, output_path) -> bool:
     """
     message.contentをテキストファイルと音声ファイルに書き込む
     :param input_text: 読み上げ内容のテキスト
@@ -115,8 +116,9 @@ def create_mp3(input_text, output_path) -> bool:
     for fx in fxs:
         input_text = fx(input_text)
     if input_text:
-        print(input_text)
-        gen_mp3(input_text, output_path)
+        msg: str = f"{name}, {input_text}"
+        gen_mp3(msg, output_path)
+        print(msg)
         return True
     return False
 
@@ -126,4 +128,4 @@ if __name__ == '__main__':
     mkdir("./dict/")
     mkdir("./output/")
     now = datetime.now()
-    create_mp3("テスト", f"../output/output_{now:%Y%m%d_%H%M%S}.mp3")
+    create_mp3("K", "テスト", f"../output/output_{now:%Y%m%d_%H%M%S}.mp3")

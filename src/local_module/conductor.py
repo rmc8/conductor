@@ -3,12 +3,15 @@ import asyncio
 import pathlib
 import platform
 from datetime import datetime
+from collections import defaultdict, deque
 
 import discord
 from discord.ext import commands
 
 from . import config, rt, voice
 
+
+queue_dict = defaultdict(deque)
 
 if platform.system() == "Windows":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -24,6 +27,20 @@ log_path = f"./log/{rt:%Y%m%d_%H%M%S}_{{log_type}}.txt"
 def write_log(*args, log_type: str):
     with open(log_path.format(log_type=log_type), mode="a", encoding="utf-8") as f:
         print(*args, file=f)
+
+
+def play(vc, queue):
+    if not queue or vc.is_playing():
+        return
+    source = queue.popleft()
+    vc.play(source, after=lambda e: play(vc, queue))
+
+
+def enqueue(vc, guild, source):
+    queue = queue_dict[guild.id]
+    queue.append(source)
+    if not vc.is_playing():
+        play(vc, queue)
 
 
 @bot.command()
@@ -89,9 +106,13 @@ async def on_message(message):
         )
         if exists:
             p = pathlib.Path(mp3_path)
-            print(p.resolve())
             source = discord.FFmpegPCMAudio(str(p.resolve()))
-            message.guild.voice_client.play(source)
+            # message.guild.voice_client.play(source)
+            enqueue(
+                vc=message.guild.voice_client,
+                guild=message.guild,
+                source=source,
+            )
     await bot.process_commands(message)
     print("---on_message_end---")
 

@@ -1,3 +1,4 @@
+import os
 import re
 import asyncio
 import pathlib
@@ -9,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from . import config, rt, voice
+from .util import YamlConfig
 
 
 queue_dict = defaultdict(deque)
@@ -43,17 +45,34 @@ def enqueue(vc, guild, source):
         play(vc, queue)
 
 
+def get_user_dict_path_from_ctx(ctx) -> str:
+    gid = ctx.guild.id
+    return f"./dict/{gid}_dict.yml"
+
+
 @bot.command()
 async def aw(ctx, arg1, arg2):
-    with open('./dict/dict.csv', mode='a', encoding='utf-8') as f:
-        f.write(f'{arg1},{arg2}\n')
-        print(f'dic.txtに書き込み：\n{arg1}, {arg2}')
+    user_dict_path = get_user_dict_path_from_ctx(ctx)
+    yc = YamlConfig(file_path=user_dict_path)
+    user_dict = yc.load()
+    print(user_dict)
+    user_dict[arg1] = arg2
+    print(user_dict)
+    yc.write(user_dict)
     await ctx.send(f'`{arg1}`を`{arg2}`として登録しました')
 
 
 @bot.command()
 async def dw(ctx, arg1):
-    pass
+    user_dict_path = get_user_dict_path_from_ctx(ctx)
+    yc = YamlConfig(file_path=user_dict_path)
+    user_dict = yc.load()
+    msg: str = f"{arg1}が辞書内に見つかりませんでした"
+    if arg1 in user_dict.keys():
+        del user_dict[arg1]
+        msg = f"{arg1}を辞書から削除しました"
+    yc.write(user_dict)
+    await ctx.send(msg)
 
 
 @bot.event
@@ -61,9 +80,17 @@ async def on_ready():
     print(f"Logged on as {bot.user}!")
 
 
+def user_dict_init(guild_id):
+    user_dict_path = f"./dict/{guild_id}_dict.yml"
+    if not os.path.exists(user_dict_path):
+        with open(user_dict_path, mode="w", encoding="utf-8") as f:
+            print(f"_{guild_id}_user_dict_init_: _\n", file=f, end="")
+
+
 @bot.event
 async def on_message(message):
     print("---on_message_start---")
+    user_dict_init(message.guild.id)
     write_log(message.content, log_type="message")
     mute_id: list = config["voice"]["mute"]
     do_mute: bool = message.author.id in mute_id
@@ -103,6 +130,7 @@ async def on_message(message):
             display_name,
             message.content,
             mp3_path,
+            message.guild.id,
         )
         if exists:
             p = pathlib.Path(mp3_path)

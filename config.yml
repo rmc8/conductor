@@ -10,6 +10,7 @@ prsk:
       vc_fmt:
     cheerful:
       category_id:
+      room_ch_id:
       vc_id:
       vc_fmt:
 voice:

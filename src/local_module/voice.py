@@ -5,6 +5,7 @@ from datetime import datetime
 import pyttsx3
 
 from . import config
+from .util import YamlConfig
 
 
 settings: dict = config["voice"]["settings"]
@@ -73,24 +74,20 @@ def rm_mention(text):
     return re.sub(pattern, "", text, flags=re.DOTALL)
 
 
-def user_custom(text):
+def user_custom(text, gid):
     """
     辞書のデータを読み上げる
     :param text:
     :return:
     """
-    user_dict: str = f"{os.getcwd()}/dict/dict.csv"
-    if not os.path.exists(user_dict):
+    user_dict_path: str = f"./dict/{gid}_dict.yml"
+    if not os.path.exists(user_dict_path):
         return text
-
-    with open(user_dict, "r", encoding="utf-8") as f:
-        lines = f.readline()
-        lines = [ln for ln in lines if "," in ln]
-        for line in lines:
-            pattern = line.strip().split(",")
-            if pattern[0] in text:
-                text = text.replace(pattern[0], pattern[1])
-                print(f"置換後のtext: {text}")
+    yc = YamlConfig(user_dict_path)
+    user_dict: dict = yc.load()
+    for k, v in user_dict.items():
+        text = text.replace(k, v)
+    print(f"置換後のtext: {text}")
     return text
 
 
@@ -103,7 +100,7 @@ def gen_mp3(text, path):
     print(f"save: {path}")
 
 
-def create_mp3(name, input_text, output_path) -> bool:
+def create_mp3(name, input_text, output_path, gid) -> bool:
     """
     message.contentをテキストファイルと音声ファイルに書き込む
     :param input_text: 読み上げ内容のテキスト
@@ -112,9 +109,10 @@ def create_mp3(name, input_text, output_path) -> bool:
     """
     # message.contentをテキストファイルに書き込み
     fxs = (rm_command, omit_code_block, omit_url, rm_symbol,
-           rm_picture, rm_mention, user_custom, rm_custom_emoji)
+           rm_picture, rm_mention, rm_custom_emoji)
     for fx in fxs:
         input_text = fx(input_text)
+    input_text = user_custom(input_text, gid)
     if input_text:
         msg: str = f"{name}, {input_text}"
         gen_mp3(msg, output_path)

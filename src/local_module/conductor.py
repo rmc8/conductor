@@ -3,17 +3,15 @@ import asyncio
 import pathlib
 import platform
 from datetime import datetime
-# from glob import glob
-# from datetime import datetime
-# from typing import Optional, Union
+from collections import defaultdict, deque
 
 import discord
 from discord.ext import commands
-# import pandas as pd
-# from pandas import DataFrame
 
-from . import config, voice  # , write_config
+from . import config, rt, voice
 
+
+queue_dict = defaultdict(deque)
 
 if platform.system() == "Windows":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -23,6 +21,26 @@ intents.message_content = True
 intents.members = True
 bot = commands.Bot(intents=intents, command_prefix=".")
 client = discord.Client(intents=discord.Intents.all())
+log_path = f"./log/{rt:%Y%m%d_%H%M%S}_{{log_type}}.txt"
+
+
+def write_log(*args, log_type: str):
+    with open(log_path.format(log_type=log_type), mode="a", encoding="utf-8") as f:
+        print(*args, file=f)
+
+
+def play(vc, queue):
+    if not queue or vc.is_playing():
+        return
+    source = queue.popleft()
+    vc.play(source, after=lambda e: play(vc, queue))
+
+
+def enqueue(vc, guild, source):
+    queue = queue_dict[guild.id]
+    queue.append(source)
+    if not vc.is_playing():
+        play(vc, queue)
 
 
 @bot.command()
@@ -40,12 +58,13 @@ async def dw(ctx, arg1):
 
 @bot.event
 async def on_ready():
-    print(f"Logged on as {client.user}!")
+    print(f"Logged on as {bot.user}!")
 
 
 @bot.event
 async def on_message(message):
     print("---on_message_start---")
+    write_log(message.content, log_type="message")
     mute_id: list = config["voice"]["mute"]
     do_mute: bool = message.author.id in mute_id
     msg_client = message.guild.voice_client
@@ -57,7 +76,7 @@ async def on_message(message):
         await message.author.voice.channel.connect()
     elif message.content.strip().lower() == ".bye" and message.guild.voice_client is not None:
         await message.guild.voice_client.disconnect()
-    elif re.match(r"(\d{5,6})", message.content.strip()) and not message.author.bot:
+    elif re.match(r"(\d{5,6})$S", message.content.strip()) and not message.author.bot:
         room_num: str = message.content.strip()
         category_id = message.channel.category_id
         live_conf: dict = config["prsk"]["live"]
@@ -87,9 +106,13 @@ async def on_message(message):
         )
         if exists:
             p = pathlib.Path(mp3_path)
-            print(p.resolve())
             source = discord.FFmpegPCMAudio(str(p.resolve()))
-            message.guild.voice_client.play(source)
+            # message.guild.voice_client.play(source)
+            enqueue(
+                vc=message.guild.voice_client,
+                guild=message.guild,
+                source=source,
+            )
     await bot.process_commands(message)
     print("---on_message_end---")
 
@@ -97,15 +120,14 @@ async def on_message(message):
 @bot.event
 async def on_message_edit(before, after):
     print("---on_message_edit_start---")
-    print(f"BEFORE: {before}")
-    print(f"AFTER:  {after}")
+    write_log(before, after, log_type="edit")
     print("---on_message_edit_end---")
 
 
 @bot.event
 async def on_message_delete(message):
     print("---on_message_delete_start---")
-    print(f"DELETE: {message}")
+    write_log(f"{message}", log_type="delete")
     print("---on_message_delete_end---")
 
 

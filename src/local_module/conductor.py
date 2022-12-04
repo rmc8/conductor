@@ -59,7 +59,7 @@ async def aw(ctx, arg1, arg2):
     user_dict[arg1] = arg2
     print(user_dict)
     yc.write(user_dict)
-    await ctx.send(f'`{arg1}`を`{arg2}`として登録しました')
+    await ctx.send(f";`{arg1}`を`{arg2}`として登録しました")
 
 
 @bot.command()
@@ -67,10 +67,10 @@ async def dw(ctx, arg1):
     user_dict_path = get_user_dict_path_from_ctx(ctx)
     yc = YamlConfig(file_path=user_dict_path)
     user_dict = yc.load()
-    msg: str = f"{arg1}が辞書内に見つかりませんでした"
+    msg: str = f";`{arg1}`が辞書内に見つかりませんでした"
     if arg1 in user_dict.keys():
         del user_dict[arg1]
-        msg = f"{arg1}を辞書から削除しました"
+        msg = f";`{arg1}`を辞書から削除しました"
     yc.write(user_dict)
     await ctx.send(msg)
 
@@ -103,7 +103,7 @@ async def on_message(message):
         await message.author.voice.channel.connect()
     elif message.content.strip().lower() == ".bye" and message.guild.voice_client is not None:
         await message.guild.voice_client.disconnect()
-    elif re.match(r"(\d{5,6})$S", message.content.strip()) and not message.author.bot:
+    elif re.match(r"(\d{5,6})$", message.content.strip()) and not message.author.bot:
         room_num: str = message.content.strip()
         category_id = message.channel.category_id
         live_conf: dict = config["prsk"]["live"]
@@ -172,7 +172,7 @@ async def on_voice_state_update(member, before, after):
     #    msg += f"`{member.name}`が`{before.channel.name}`から`{after.channel.name}`に移動しました。"
     if msg:
         text_ch = member.guild.get_channel(config["log"]["voice_state_update"])
-        await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         await text_ch.send(msg)
     print("---on_voice_state_update_end---")
 

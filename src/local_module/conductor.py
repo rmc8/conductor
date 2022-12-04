@@ -165,9 +165,9 @@ async def on_voice_state_update(member, before, after):
     msg: str = ""
 
     if before.channel is None and after.channel:
-        msg += f"`{member.name}`が`{after.channel.name}`に参加しました。"
+        msg += f"`{member.display_name}`が`{after.channel.name}`に参加しました。"
     elif after.channel is None and after.channel:
-        msg += f"`{member.name}`が`{before.channel.name}`から退出しました。"
+        msg += f"`{member.display_name}`が`{before.channel.name}`から退出しました。"
     # elif before.channel is not None and after.channel is not None:
     #    msg += f"`{member.name}`が`{before.channel.name}`から`{after.channel.name}`に移動しました。"
     if msg:
